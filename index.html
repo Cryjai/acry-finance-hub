@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acry Finance Hub - 智能理財平台</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-chart-line"></i> Acry Finance</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" onclick="showSection('dashboard')" class="menu-item active">
+                    <i class="fas fa-home"></i> 主頁
+                </a></li>
+                <li><a href="#" onclick="showSection('transactions')" class="menu-item">
+                    <i class="fas fa-exchange-alt"></i> 記賬
+                </a></li>
+                <li><a href="#" onclick="showSection('analytics')" class="menu-item">
+                    <i class="fas fa-chart-pie"></i> 分析
+                </a></li>
+                <li><a href="#" onclick="showSection('markets')" class="menu-item">
+                    <i class="fas fa-line-chart"></i> 市場
+                </a></li>
+                <li><a href="#" onclick="showSection('settings')" class="menu-item">
+                    <i class="fas fa-cog"></i> 設定
+                </a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h1>財務總覽</h1>
+                    <div class="real-time-clock">
+                        <div class="date-time">
+                            <span id="current-date"></span>
+                            <span id="current-time"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overview-cards">
+                    <div class="card overview-card">
+                        <div class="card-content">
+                            <div class="card-icon balance">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="card-info">
+                                <h3>總餘額</h3>
+                                <p class="amount" id="total-balance">HK$0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card overview-card">
+                        <div class="card-content">
+                            <div class="card-icon income">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                            <div class="card-info">
+                                <h3>月收入</h3>
+                                <p class="amount" id="monthly-income">HK$0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card overview-card">
+                        <div class="card-content">
+                            <div class="card-icon expense">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                            <div class="card-info">
+                                <h3>月支出</h3>
+                                <p class="amount" id="monthly-expense">HK$0</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card overview-card">
+                        <div class="card-content">
+                            <div class="card-icon portfolio">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="card-info">
+                                <h3>投資組合</h3>
+                                <p class="amount" id="portfolio-value">HK$0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="btn btn--primary" onclick="openAddTransactionModal('income')">
+                        <i class="fas fa-plus"></i> 添加收入
+                    </button>
+                    <button class="btn btn--primary" onclick="openAddTransactionModal('expense')" style="background: var(--color-error); border-color: var(--color-error);">
+                        <i class="fas fa-minus"></i> 添加支出
+                    </button>
+                    <button class="btn btn--outline" onclick="showSection('markets')">
+                        <i class="fas fa-chart-bar"></i> 查看市場
+                    </button>
+                </div>
+
+                <div class="financial-health">
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>財務健康度</h3>
+                            <div class="health-indicator">
+                                <div class="health-score" id="health-score">85</div>
+                                <div class="health-status" id="health-status">良好</div>
+                            </div>
+                            <div class="health-details" id="health-details">
+                                <p>您的財務狀況良好，繼續保持！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions Section -->
+            <section id="transactions" class="content-section">
+                <div class="section-header">
+                    <h1>交易記錄</h1>
+                    <button class="btn btn--primary" onclick="openAddTransactionModal()">
+                        <i class="fas fa-plus"></i> 新增交易
+                    </button>
+                </div>
+
+                <div class="transaction-filters">
+                    <select id="filter-type" class="form-control" onchange="filterTransactions()">
+                        <option value="">所有類型</option>
+                        <option value="income">收入</option>
+                        <option value="expense">支出</option>
+                    </select>
+                    <select id="filter-category" class="form-control" onchange="filterTransactions()">
+                        <option value="">所有類別</option>
+                    </select>
+                </div>
+
+                <div class="transactions-list" id="transactions-list">
+                    <!-- Transactions will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics" class="content-section">
+                <div class="section-header">
+                    <h1>財務分析</h1>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="card chart-card">
+                        <div class="card__body">
+                            <h3>支出分類</h3>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="expenseChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card chart-card">
+                        <div class="card__body">
+                            <h3>收支趨勢</h3>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bankruptcy-prediction">
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>破產風險預測</h3>
+                            <div class="prediction-content" id="bankruptcy-prediction">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Markets Section -->
+            <section id="markets" class="content-section">
+                <div class="section-header">
+                    <h1>市場資訊</h1>
+                </div>
+
+                <div class="market-tabs">
+                    <button class="tab-btn active" onclick="showMarketTab('stocks')">股票</button>
+                    <button class="tab-btn" onclick="showMarketTab('forex')">外匯</button>
+                </div>
+
+                <div id="stocks-tab" class="market-tab-content active">
+                    <div class="stocks-list" id="stocks-list">
+                        <!-- Stocks will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div id="forex-tab" class="market-tab-content">
+                    <div class="forex-converter">
+                        <div class="card">
+                            <div class="card__body">
+                                <h3>匯率轉換器</h3>
+                                <div class="converter-form">
+                                    <input type="number" id="convert-amount" class="form-control" placeholder="輸入金額" value="1">
+                                    <select id="from-currency" class="form-control">
+                                        <option value="HKD">HKD</option>
+                                        <option value="USD">USD</option>
+                                        <option value="EUR">EUR</option>
+                                        <option value="GBP">GBP</option>
+                                        <option value="JPY">JPY</option>
+                                        <option value="CNY">CNY</option>
+                                    </select>
+                                    <span>=</span>
+                                    <select id="to-currency" class="form-control">
+                                        <option value="USD">USD</option>
+                                        <option value="HKD">HKD</option>
+                                        <option value="EUR">EUR</option>
+                                        <option value="GBP">GBP</option>
+                                        <option value="JPY">JPY</option>
+                                        <option value="CNY">CNY</option>
+                                    </select>
+                                    <div class="converter-result" id="converter-result">0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="forex-rates" id="forex-rates">
+                        <!-- Forex rates will be populated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings" class="content-section">
+                <div class="section-header">
+                    <h1>設定</h1>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>數據導出</h3>
+                            <p>下載您的財務數據</p>
+                            <button class="btn btn--primary" onclick="exportData()">
+                                <i class="fas fa-download"></i> 導出數據
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card__body">
+                            <h3>分享功能</h3>
+                            <p>分享您的財務報告</p>
+                            <button class="btn btn--outline" onclick="shareReport()">
+                                <i class="fas fa-share"></i> 分享報告
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Transaction Modal -->
+    <div id="addTransactionModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">新增交易</h3>
+                <button class="modal-close" onclick="closeAddTransactionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="transaction-form">
+                    <div class="form-group">
+                        <label class="form-label">類型</label>
+                        <select id="transaction-type" class="form-control" required>
+                            <option value="income">收入</option>
+                            <option value="expense">支出</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">金額 (HK$)</label>
+                        <input type="number" id="transaction-amount" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">類別</label>
+                        <select id="transaction-category" class="form-control" required>
+                            <!-- Categories will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">描述</label>
+                        <input type="text" id="transaction-description" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">日期</label>
+                        <input type="date" id="transaction-date" class="form-control" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn--secondary" onclick="closeAddTransactionModal()">取消</button>
+                        <button type="submit" class="btn btn--primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <p>Made by <strong>Acry CEO</strong> | <a href="https://github.com/Cryjai" target="_blank" rel="noopener"><i class="fab fa-github"></i> GitHub</a></p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

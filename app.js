@@ -8,7 +8,6 @@ const sampleTransactions = [
     {"id": 7, "type": "expense", "amount": 25, "category": "Food & Dining", "description": "Starbucks", "date": "2025-01-15", "timestamp": 1723708800000},
     {"id": 8, "type": "income", "amount": 500, "category": "Investment", "description": "Dividend payment", "date": "2025-01-10", "timestamp": 1723276800000}
 ];
-
 const stockData = [
     {"symbol": "AAPL", "name": "Apple Inc.", "price": 227.52, "change": 2.85, "changePercent": 1.27},
     {"symbol": "GOOGL", "name": "Alphabet Inc.", "price": 166.89, "change": -1.23, "changePercent": -0.73},
@@ -18,7 +17,6 @@ const stockData = [
     {"symbol": "NVDA", "name": "NVIDIA Corp.", "price": 125.61, "change": 7.89, "changePercent": 6.70},
     {"symbol": "META", "name": "Meta Platforms Inc.", "price": 528.73, "change": -4.52, "changePercent": -0.85}
 ];
-
 const forexRates = [
     {"pair": "USD/HKD", "rate": 7.8125, "change": 0.0025, "changePercent": 0.03},
     {"pair": "EUR/HKD", "rate": 8.4567, "change": -0.0234, "changePercent": -0.28},
@@ -26,7 +24,6 @@ const forexRates = [
     {"pair": "JPY/HKD", "rate": 0.0523, "change": -0.0012, "changePercent": -2.24},
     {"pair": "CNY/HKD", "rate": 1.0876, "change": 0.0034, "changePercent": 0.31}
 ];
-
 const categories = [
     "Food & Dining",
     "Transportation", 
@@ -56,7 +53,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeApp() {
     updateRealTimeClock();
     setInterval(updateRealTimeClock, 1000);
-    
     populateCategories();
     updateDashboard();
     renderTransactions();
@@ -64,17 +60,29 @@ function initializeApp() {
     renderForexRates();
     initializeCharts();
     calculateBankruptcyPrediction();
-    
+
     // Set default date in transaction form
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('transaction-date').value = today;
-    
+
     // Initialize forex converter
     updateForexConverter();
-    
+
     // Add event listeners for forex converter
     ['convert-amount', 'from-currency', 'to-currency'].forEach(id => {
         document.getElementById(id).addEventListener('change', updateForexConverter);
+    });
+
+    // Add event listeners for menu and tabs (for improved compatibility)
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            showSection(item.getAttribute('data-section'), e);
+        });
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            showMarketTab(btn.getAttribute('data-tab'), e);
+        });
     });
 }
 
@@ -95,28 +103,23 @@ function updateRealTimeClock() {
         second: '2-digit',
         hour12: false
     };
-    
     document.getElementById('current-date').textContent = now.toLocaleDateString('zh-HK', options);
     document.getElementById('current-time').textContent = now.toLocaleTimeString('zh-HK', timeOptions);
 }
 
 // Navigation functionality
-function showSection(sectionId) {
-    // Hide all sections
+function showSection(sectionId, event) {
     document.querySelectorAll('.content-section').forEach(section => {
         section.classList.remove('active');
     });
-    
     // Remove active class from all menu items
     document.querySelectorAll('.menu-item').forEach(item => {
         item.classList.remove('active');
     });
-    
-    // Show selected section
     document.getElementById(sectionId).classList.add('active');
-    
-    // Add active class to clicked menu item
-    event.target.closest('.menu-item').classList.add('active');
+    if (event && event.target) {
+        event.target.closest('.menu-item').classList.add('active');
+    }
 }
 
 // Dashboard functionality
@@ -124,70 +127,55 @@ function updateDashboard() {
     const totalIncome = transactions
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + t.amount, 0);
-    
     const totalExpenses = transactions
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
-    
     const totalBalance = totalIncome - totalExpenses;
-    
-    // Get current month transactions
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     const monthlyIncome = transactions
         .filter(t => {
             const transactionDate = new Date(t.date);
-            return t.type === 'income' && 
+            return t.type === 'income' &&
                    transactionDate.getMonth() === currentMonth &&
                    transactionDate.getFullYear() === currentYear;
         })
         .reduce((sum, t) => sum + t.amount, 0);
-    
     const monthlyExpenses = transactions
         .filter(t => {
             const transactionDate = new Date(t.date);
-            return t.type === 'expense' && 
+            return t.type === 'expense' &&
                    transactionDate.getMonth() === currentMonth &&
                    transactionDate.getFullYear() === currentYear;
         })
         .reduce((sum, t) => sum + t.amount, 0);
-    
     // Calculate portfolio value (simplified)
     const portfolioValue = transactions
         .filter(t => t.category === 'Investment')
         .reduce((sum, t) => t.type === 'income' ? sum + t.amount : sum - t.amount, 0);
-    
-    // Update dashboard displays
+
     document.getElementById('total-balance').textContent = `HK$${totalBalance.toFixed(2)}`;
     document.getElementById('monthly-income').textContent = `HK$${monthlyIncome.toFixed(2)}`;
     document.getElementById('monthly-expense').textContent = `HK$${monthlyExpenses.toFixed(2)}`;
     document.getElementById('portfolio-value').textContent = `HK$${portfolioValue.toFixed(2)}`;
-    
-    // Update financial health
     updateFinancialHealth(monthlyIncome, monthlyExpenses, totalBalance);
 }
 
 function updateFinancialHealth(monthlyIncome, monthlyExpenses, totalBalance) {
-    let score = 50; // Base score
+    let score = 50;
     let status = '一般';
     let details = '';
-    
     // Income vs expenses ratio
     if (monthlyIncome > 0) {
         const savingsRate = (monthlyIncome - monthlyExpenses) / monthlyIncome;
         score += savingsRate * 30;
     }
-    
     // Total balance factor
     if (totalBalance > 10000) score += 20;
     else if (totalBalance > 0) score += 10;
     else score -= 20;
-    
-    // Expense pattern analysis
     if (monthlyExpenses > monthlyIncome) score -= 15;
-    
-    // Determine status and details
     if (score >= 80) {
         status = '優秀';
         details = '您的財務狀況非常健康！繼續保持良好的理財習慣。';
@@ -201,7 +189,6 @@ function updateFinancialHealth(monthlyIncome, monthlyExpenses, totalBalance) {
         status = '需改善';
         details = '財務狀況需要改善，請減少非必要支出並增加收入。';
     }
-    
     document.getElementById('health-score').textContent = Math.max(0, Math.min(100, Math.round(score)));
     document.getElementById('health-status').textContent = status;
     document.getElementById('health-details').innerHTML = `<p>${details}</p>`;
@@ -210,7 +197,6 @@ function updateFinancialHealth(monthlyIncome, monthlyExpenses, totalBalance) {
 // Transaction management
 function populateCategories() {
     const categorySelects = ['transaction-category', 'filter-category'];
-    
     categorySelects.forEach(selectId => {
         const select = document.getElementById(selectId);
         if (selectId === 'filter-category') {
@@ -218,13 +204,14 @@ function populateCategories() {
         } else {
             select.innerHTML = '';
         }
-        
+        const fragment = document.createDocumentFragment();
         categories.forEach(category => {
             const option = document.createElement('option');
             option.value = category;
             option.textContent = category;
-            select.appendChild(option);
+            fragment.appendChild(option);
         });
+        select.appendChild(fragment);
     });
 }
 
@@ -232,19 +219,15 @@ function openAddTransactionModal(type = 'expense') {
     document.getElementById('addTransactionModal').classList.remove('hidden');
     document.getElementById('transaction-type').value = type;
     document.getElementById('modal-title').textContent = type === 'income' ? '新增收入' : '新增支出';
-    
-    // Reset form
-    document.getElementById('transaction-form').reset();
+    const form = document.getElementById('transaction-form');
+    form.reset();
     document.getElementById('transaction-date').value = new Date().toISOString().split('T')[0];
 }
-
 function closeAddTransactionModal() {
     document.getElementById('addTransactionModal').classList.add('hidden');
 }
-
 document.getElementById('transaction-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    
     const formData = new FormData(e.target);
     const transaction = {
         id: nextTransactionId++,
@@ -255,29 +238,32 @@ document.getElementById('transaction-form').addEventListener('submit', function(
         date: document.getElementById('transaction-date').value,
         timestamp: new Date(document.getElementById('transaction-date').value).getTime()
     };
-    
     transactions.unshift(transaction);
-    
     updateDashboard();
     renderTransactions();
     updateCharts();
     calculateBankruptcyPrediction();
-    
     closeAddTransactionModal();
-    
-    // Show success message
     showNotification('交易已成功添加！', 'success');
 });
-
+document.getElementById('reset-transactions-btn').addEventListener('click', function () {
+    if (confirm('確定要重設所有交易記錄嗎？此操作無法還原。')) {
+        transactions = [];
+        nextTransactionId = 1;
+        updateDashboard();
+        renderTransactions();
+        updateCharts();
+        calculateBankruptcyPrediction();
+        showNotification('所有交易記錄已重設！', 'success');
+    }
+});
 function renderTransactions() {
     const container = document.getElementById('transactions-list');
     const filteredTransactions = getFilteredTransactions();
-    
     if (filteredTransactions.length === 0) {
         container.innerHTML = '<p class="no-data">暫無交易記錄</p>';
         return;
     }
-    
     container.innerHTML = filteredTransactions.map(transaction => `
         <div class="transaction-item">
             <div class="transaction-info">
@@ -295,18 +281,15 @@ function renderTransactions() {
         </div>
     `).join('');
 }
-
 function getFilteredTransactions() {
     const typeFilter = document.getElementById('filter-type').value;
     const categoryFilter = document.getElementById('filter-category').value;
-    
     return transactions.filter(transaction => {
         const matchesType = !typeFilter || transaction.type === typeFilter;
         const matchesCategory = !categoryFilter || transaction.category === categoryFilter;
         return matchesType && matchesCategory;
     }).sort((a, b) => new Date(b.date) - new Date(a.date));
 }
-
 function filterTransactions() {
     renderTransactions();
 }
@@ -316,15 +299,12 @@ function initializeCharts() {
     createExpenseChart();
     createTrendChart();
 }
-
 function createExpenseChart() {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     const expensesByCategory = getExpensesByCategory();
-    
     if (expenseChart) {
         expenseChart.destroy();
     }
-    
     expenseChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -351,15 +331,12 @@ function createExpenseChart() {
         }
     });
 }
-
 function createTrendChart() {
     const ctx = document.getElementById('trendChart').getContext('2d');
     const trendData = getTrendData();
-    
     if (trendChart) {
         trendChart.destroy();
     }
-    
     trendChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -410,22 +387,17 @@ function createTrendChart() {
         }
     });
 }
-
 function getExpensesByCategory() {
     const expenses = transactions.filter(t => t.type === 'expense');
     const categoryTotals = {};
-    
     expenses.forEach(expense => {
         categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + expense.amount;
     });
-    
     return categoryTotals;
 }
-
 function getTrendData() {
     const last6Months = [];
     const now = new Date();
-    
     for (let i = 5; i >= 0; i--) {
         const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
         last6Months.push({
@@ -434,13 +406,11 @@ function getTrendData() {
             monthIndex: date.getMonth()
         });
     }
-    
     const trendData = {
         labels: last6Months.map(m => m.month),
         income: [],
         expenses: []
     };
-    
     last6Months.forEach(({ year, monthIndex }) => {
         const monthIncome = transactions
             .filter(t => {
@@ -450,7 +420,6 @@ function getTrendData() {
                        transactionDate.getMonth() === monthIndex;
             })
             .reduce((sum, t) => sum + t.amount, 0);
-        
         const monthExpenses = transactions
             .filter(t => {
                 const transactionDate = new Date(t.date);
@@ -459,14 +428,11 @@ function getTrendData() {
                        transactionDate.getMonth() === monthIndex;
             })
             .reduce((sum, t) => sum + t.amount, 0);
-        
         trendData.income.push(monthIncome);
         trendData.expenses.push(monthExpenses);
     });
-    
     return trendData;
 }
-
 function updateCharts() {
     if (expenseChart) {
         const expensesByCategory = getExpensesByCategory();
@@ -474,7 +440,6 @@ function updateCharts() {
         expenseChart.data.datasets[0].data = Object.values(expensesByCategory);
         expenseChart.update();
     }
-    
     if (trendChart) {
         const trendData = getTrendData();
         trendChart.data.datasets[0].data = trendData.income;
@@ -485,41 +450,35 @@ function updateCharts() {
 
 // Bankruptcy prediction
 function calculateBankruptcyPrediction() {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     const monthlyIncome = transactions
         .filter(t => {
             const transactionDate = new Date(t.date);
-            return t.type === 'income' && 
+            return t.type === 'income' &&
                    transactionDate.getMonth() === currentMonth &&
                    transactionDate.getFullYear() === currentYear;
         })
         .reduce((sum, t) => sum + t.amount, 0);
-    
     const monthlyExpenses = transactions
         .filter(t => {
             const transactionDate = new Date(t.date);
-            return t.type === 'expense' && 
+            return t.type === 'expense' &&
                    transactionDate.getMonth() === currentMonth &&
                    transactionDate.getFullYear() === currentYear;
         })
         .reduce((sum, t) => sum + t.amount, 0);
-    
     const totalBalance = transactions
         .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0) - 
+        .reduce((sum, t) => sum + t.amount, 0) -
         transactions
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
-    
     let riskLevel = 'low';
     let riskText = '低風險';
     let recommendation = '您的財務狀況健康，繼續保持良好的理財習慣。';
-    
-    // Calculate debt-to-income ratio
     const expenseRatio = monthlyIncome > 0 ? monthlyExpenses / monthlyIncome : 1;
-    
     if (expenseRatio > 0.9 || totalBalance < 0) {
         riskLevel = 'high';
         riskText = '高風險';
@@ -529,7 +488,6 @@ function calculateBankruptcyPrediction() {
         riskText = '中風險';
         recommendation = '需要注意：支出佔收入比例過高，建議建立緊急基金並控制支出。';
     }
-    
     document.getElementById('bankruptcy-prediction').innerHTML = `
         <div class="risk-level ${riskLevel}">
             <i class="fas fa-${riskLevel === 'low' ? 'check-circle' : riskLevel === 'medium' ? 'exclamation-triangle' : 'times-circle'}"></i>
@@ -545,7 +503,6 @@ function calculateBankruptcyPrediction() {
 // Stock market functionality
 function renderStocks() {
     const container = document.getElementById('stocks-list');
-    
     container.innerHTML = stockData.map(stock => `
         <div class="stock-item">
             <div class="stock-header">
@@ -566,7 +523,6 @@ function renderStocks() {
 // Forex functionality
 function renderForexRates() {
     const container = document.getElementById('forex-rates');
-    
     container.innerHTML = forexRates.map(forex => `
         <div class="forex-item">
             <div class="forex-pair">${forex.pair}</div>
@@ -578,50 +534,37 @@ function renderForexRates() {
         </div>
     `).join('');
 }
-
-function showMarketTab(tabName) {
-    // Remove active class from all tabs
+function showMarketTab(tabName, event) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.market-tab-content').forEach(content => content.classList.remove('active'));
-    
-    // Add active class to selected tab
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
     document.getElementById(`${tabName}-tab`).classList.add('active');
 }
-
+// Optimized forex converter
 function updateForexConverter() {
     const amount = parseFloat(document.getElementById('convert-amount').value) || 1;
     const fromCurrency = document.getElementById('from-currency').value;
     const toCurrency = document.getElementById('to-currency').value;
-    
     let result = amount;
-    
-    // Simple conversion logic using forex rates
     if (fromCurrency !== toCurrency) {
-        // Find conversion rate
         const directRate = forexRates.find(r => r.pair === `${fromCurrency}/${toCurrency}`);
         const reverseRate = forexRates.find(r => r.pair === `${toCurrency}/${fromCurrency}`);
-        
+        const fromToHKD = forexRates.find(r => r.pair === `${fromCurrency}/HKD`);
+        const toToHKD = forexRates.find(r => r.pair === `${toCurrency}/HKD`);
         if (directRate) {
             result = amount * directRate.rate;
         } else if (reverseRate) {
             result = amount / reverseRate.rate;
-        } else {
-            // Convert through HKD
-            const fromToHKD = forexRates.find(r => r.pair === `${fromCurrency}/HKD`);
-            const toToHKD = forexRates.find(r => r.pair === `${toCurrency}/HKD`);
-            
-            if (fromCurrency === 'HKD' && toToHKD) {
-                result = amount / toToHKD.rate;
-            } else if (toCurrency === 'HKD' && fromToHKD) {
-                result = amount * fromToHKD.rate;
-            } else if (fromToHKD && toToHKD) {
-                const hkdAmount = amount * fromToHKD.rate;
-                result = hkdAmount / toToHKD.rate;
-            }
+        } else if (fromCurrency === 'HKD' && toToHKD) {
+            result = amount / toToHKD.rate;
+        } else if (toCurrency === 'HKD' && fromToHKD) {
+            result = amount * fromToHKD.rate;
+        } else if (fromToHKD && toToHKD) {
+            result = amount * fromToHKD.rate / toToHKD.rate;
         }
     }
-    
     document.getElementById('converter-result').textContent = `${result.toFixed(2)} ${toCurrency}`;
 }
 
@@ -632,7 +575,7 @@ function exportData() {
         summary: {
             totalBalance: transactions
                 .filter(t => t.type === 'income')
-                .reduce((sum, t) => sum + t.amount, 0) - 
+                .reduce((sum, t) => sum + t.amount, 0) -
                 transactions
                 .filter(t => t.type === 'expense')
                 .reduce((sum, t) => sum + t.amount, 0),
@@ -645,7 +588,6 @@ function exportData() {
         },
         exportDate: new Date().toISOString()
     };
-    
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -655,59 +597,56 @@ function exportData() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
     showNotification('數據已導出成功！', 'success');
 }
-
 function shareReport() {
     const totalBalance = transactions
         .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0) - 
+        .reduce((sum, t) => sum + t.amount, 0) -
         transactions
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
-    
     const shareText = `我在使用 Acry Finance Hub 管理財務！\n目前總餘額：HK$${totalBalance.toFixed(2)}\n\n#理財 #AcryFinance`;
-    
     if (navigator.share) {
         navigator.share({
             title: 'Acry Finance Hub - 財務報告',
             text: shareText
+        }).catch(() => {
+            showNotification('分享失敗，請重試！', 'error');
         });
-    } else {
-        // Fallback to copying to clipboard
+    } else if (navigator.clipboard) {
         navigator.clipboard.writeText(shareText).then(() => {
             showNotification('報告已複製到剪貼板！', 'success');
+        }).catch(() => {
+            showNotification('複製失敗，請重試！', 'error');
         });
+    } else {
+        showNotification('分享功能不支援此瀏覽器！', 'error');
     }
 }
 
 // Utility functions
 function showNotification(message, type = 'info') {
-    // Simple notification system
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
+    notification.setAttribute('role', 'alert');
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
         padding: 16px 24px;
-        background: var(--color-${type === 'success' ? 'success' : 'primary'});
+        background: var(--color-${type === 'success' ? 'success' : type === 'error' ? 'error' : 'primary'});
         color: white;
         border-radius: 8px;
         z-index: 10000;
         animation: slideIn 0.3s ease-out;
     `;
     notification.textContent = message;
-    
     document.body.appendChild(notification);
-    
     setTimeout(() => {
         notification.remove();
     }, 3000);
 }
-
-// Add CSS for notification animation
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -720,5 +659,9 @@ style.textContent = `
         padding: var(--space-32);
         font-style: italic;
     }
+    .notification.error {
+        background: var(--color-error, #DB4545);
+    }
 `;
 document.head.appendChild(style);
+

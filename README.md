@@ -19,6 +19,8 @@
 ## 👑 Credit
 「Made by Acry CEO」——GitHub：[@Cryjai](https://github.com/Cryjai)
 
+Let's try on https://cryjai.github.io/acry-finance-hub/#
+
 ## 🦉 人生金句提示
 > 你唔理財，財唔理你。唔好以為DSE考晒就可以嘆世界，冇App喺手，下個月就知你銀行Acc唔夠錢買MTR月票。  
 > **理財唔係玩，Acry Finance Hub有型有工能，玩埋Share功能嚇窒啲廢青朋友！**
